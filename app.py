@@ -56,7 +56,11 @@ def concept_dict_creation(final_df):
         field = list(curr_df['Name'])
         concepts_fields[c] = {}
         for l in range(len(labels)):
-            concepts_fields[c][labels[l]] = field[l]
+            #split by !!
+            label_split = labels[l].split("!!")
+            new_label = label_split[-1]
+            new_label = new_label + "_" + c
+            concepts_fields[c][new_label] = field[l]
     return(concepts_fields)
 
 
@@ -109,8 +113,10 @@ def census_2020(API_key, county_codes = US_county_codes, fields = {'OCCUPANCY ST
 
     # fields = fields['OCCUPANCY STATUS'].values()
     field_list = []
-    for i in fields:
-        field_list.append(field_dict['OCCUPANCY STATUS'].get(i))
+    for k in field_dict.keys():
+        for i in fields:
+            field_list.append(field_dict[k].get(i))
+    field_list = list(filter(None, field_list))
 
     state_abr = state_abr[0]
     
@@ -126,11 +132,13 @@ def census_2020(API_key, county_codes = US_county_codes, fields = {'OCCUPANCY ST
     #     # county_url = 'https://www2.census.gov/geo/docs/reference/codes/files/st{}_{}_cou.txt'.format(state, state_abr.lower())
     #     # print(county_url)
     #     # county_codes = pd.read_csv(county_url, names=['State', 'State Code', 'County Code', 'County Name', 'Fips Class Code'], dtype={'County Code': str})
-        
-    if county_name != "ALL COUNTIES":
-        county_name = county_codes.loc[county_codes['County Name'] == county_name]['County Code'].values[0]
-    if county_name == "ALL COUNTIES":
+    if county_name[0] == "ALL COUNTIES":
         county_name = "*"
+    elif county_name != "ALL COUNTIES":
+        # county_name = county_codes.loc[county_codes['County Name'] == county_name]['County Code'].values[0]
+        county_name = county_codes.loc[county_codes['County Name'].isin(county_name)]['County Code'].values
+        county_name = ','.join(county_name)
+
 
     if tract:
         final_call = 'https://api.census.gov/data/2020/dec/pl?get={}&for=tract:*&in=state:{}&in=county:{}&key={}'.format(','.join(field_list), state, county_name, API_key)
@@ -162,6 +170,7 @@ def census_2020(API_key, county_codes = US_county_codes, fields = {'OCCUPANCY ST
 
         #merge with state codes table
         call_df = call_df.merge(state_codes, left_on = 'state', right_on = 'STATE', how = 'left')
+        call_df = call_df.rename(columns = {'STUSAB': 'State', 'STATE': 'State Code', 'state': 'state code'})
 
 
     #update call_df to the right data types
@@ -185,23 +194,44 @@ tract = st.sidebar.radio(label = "Census Tract Granularity", options = (True, Fa
 #options for what fields to choose
 occupancy_fields = st.sidebar.multiselect(label = "Occupancy Fields", options = list(field_dict['OCCUPANCY STATUS'].keys()))
 
-# race_fields = st.sidebar.multiselect(label = "Race Fields", options = list(field_dict['RACE'].keys()))
+race_fields = st.sidebar.multiselect(label = "Race Fields", options = list(field_dict['RACE'].keys()))
 
-# race_18plus_fields = st.sidebar.multiselect(label = "Race 18+ Fields", options = list(field_dict['RACE FOR THE POPULATION 18 YEARS AND OVER'].keys()))
+race_18plus_fields = st.sidebar.multiselect(label = "Race 18+ Fields", options = list(field_dict['RACE FOR THE POPULATION 18 YEARS AND OVER'].keys()))
 
-# hisp_lat_fields = st.sidebar.multiselect(label = "Hispanic/Latino Fields", options = list(field_dict['HISPANIC OR LATINO AND NOT HISPANIC OR LATINO BY RACE'].keys()))
+hisp_lat_fields = st.sidebar.multiselect(label = "Hispanic/Latino Fields", options = list(field_dict['HISPANIC OR LATINO AND NOT HISPANIC OR LATINO BY RACE'].keys()))
 
-# hist_lat_18plus_fields = st.sidebar.multiselect(label = "Hispanic/Latino 18+ Fields", options = list(field_dict['HISPANIC OR LATINO AND NOT HISPANIC OR LATINO BY RACE FOR THE POPULATION 18 YEARS AND OVER'].keys()))
+hist_lat_18plus_fields = st.sidebar.multiselect(label = "Hispanic/Latino 18+ Fields", options = list(field_dict['HISPANIC OR LATINO AND NOT HISPANIC OR LATINO BY RACE FOR THE POPULATION 18 YEARS AND OVER'].keys()))
 
-# group_quarters_fields = st.sidebar.multiselect(label = "Group Quarters Fields", options = list(field_dict['GROUP QUARTERS POPULATION BY MAJOR GROUP QUARTERS TYPE'].keys()))
+group_quarters_fields = st.sidebar.multiselect(label = "Group Quarters Fields", options = list(field_dict['GROUP QUARTERS POPULATION BY MAJOR GROUP QUARTERS TYPE'].keys()))
 
-
+fields_to_read = occupancy_fields + race_fields + race_18plus_fields + hisp_lat_fields + hist_lat_18plus_fields + group_quarters_fields
 
 button_clicked = st.sidebar.button(label="Run Query")
 
 if button_clicked:
-    results = census_2020(api, US_county_codes, occupancy_fields, state, county_name[0], county, tract, field_dict)
+    results = census_2020(api, US_county_codes, fields_to_read, state, county_name, county, tract, field_dict)
     st.write(results[1])
+
+    needed_tabs = ['State']
+    if county:
+        needed_tabs.append('County')
+    if tract:
+        needed_tabs.append('Tract')
+
+    tabs = st.tabs(needed_tabs)
+    for i in range(len(needed_tabs)):
+        with tabs[i]:
+            if needed_tabs[i] == 'State':
+                st.bar_chart(results[1], x = 'State', y = fields_to_read)
+            if needed_tabs[i] == 'County':
+                st.bar_chart(results[1], x = 'County Name', y = fields_to_read)
+            if needed_tabs[i] == 'Tract':
+                st.bar_chart(results[1], x = 'tract', y = fields_to_read)                
+    # for i in range(len(fields_to_read)):
+    #     with tabs[i]:
+    #         tab_fields = st.multiselect(label='add fields', options = fields_to_read, default = fields_to_read[i])
+    #         st.header(fields_to_read[i])
+    #         st.bar_chart(results[1], x = 'STUSAB', y = tab_fields) 
 
 def run_query(api = 'empty', state = 'empty'):
     st.write("Api: {} State: {}".format(api, state))
