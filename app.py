@@ -106,6 +106,7 @@ US_county_list.append('ALL COUNTIES')
 field_dict = load_fields()
 
 #Call Census Query
+@st.cache()
 def census_2020(API_key, county_codes = US_county_codes, fields = {'OCCUPANCY STATUS': {'!!Total:' :'H1_001N'}},
                  state_abr = "ALL STATES", county_name = "ALL COUNTIES", county = True,
                   tract = True, field_dict = field_dict):
@@ -180,6 +181,15 @@ def census_2020(API_key, county_codes = US_county_codes, fields = {'OCCUPANCY ST
 
     return(final_call, call_df)
 
+@st.cache()
+def display_chart(chart_fields, x_value):
+    fields = [x_value] + chart_fields
+    new_results = results[1][fields]
+    # chart_fields = st.multiselect(label='Choose fields', options = fields_to_read, default = fields_to_read[0])
+    # st.bar_chart(results[1], x = x_value, y = chart_fields)
+    return(new_results)
+
+
 api = st.sidebar.text_input(label="Enter API Key", value="")
 
 state = st.sidebar.multiselect(label="Enter State Abbreviation", options=state_list ,default='ALL STATES')
@@ -208,30 +218,38 @@ fields_to_read = occupancy_fields + race_fields + race_18plus_fields + hisp_lat_
 
 button_clicked = st.sidebar.button(label="Run Query")
 
+
 if button_clicked:
     results = census_2020(api, US_county_codes, fields_to_read, state, county_name, county, tract, field_dict)
     st.write(results[1])
+    # st.write(field_dict)
+    st.session_state['df'] = results[1]
+    st.session_state['fields_to_read'] = fields_to_read
+    st.session_state['county'] = county
+    st.session_state['tract'] = tract
 
-    needed_tabs = ['State']
-    if county:
-        needed_tabs.append('County')
-    if tract:
-        needed_tabs.append('Tract')
+# needed_tabs = ['State']
+# if county:
+#     needed_tabs.append('County')
+# if tract:
+#     needed_tabs.append('Tract')
 
-    tabs = st.tabs(needed_tabs)
-    for i in range(len(needed_tabs)):
-        with tabs[i]:
-            if needed_tabs[i] == 'State':
-                st.bar_chart(results[1], x = 'State', y = fields_to_read)
-            if needed_tabs[i] == 'County':
-                st.bar_chart(results[1], x = 'County Name', y = fields_to_read)
-            if needed_tabs[i] == 'Tract':
-                st.bar_chart(results[1], x = 'tract', y = fields_to_read)                
-    # for i in range(len(fields_to_read)):
-    #     with tabs[i]:
-    #         tab_fields = st.multiselect(label='add fields', options = fields_to_read, default = fields_to_read[i])
-    #         st.header(fields_to_read[i])
-    #         st.bar_chart(results[1], x = 'STUSAB', y = tab_fields) 
+
+# tabs = st.tabs(needed_tabs)
+# for i in range(len(needed_tabs)):
+#     with tabs[i]:
+#         if needed_tabs[i] == 'State':
+#             chart_fields = st.multiselect(label='Choose fields', options = fields_to_read, default = fields_to_read[0])
+#             st.bar_chart(results[1], x = 'State', y = chart_fields)
+#         if needed_tabs[i] == 'County':
+#             st.bar_chart(results[1], x = 'County Name', y = fields_to_read)
+#         if needed_tabs[i] == 'Tract':
+#             st.bar_chart(results[1], x = 'tract', y = fields_to_read)                
+# # for i in range(len(fields_to_read)):
+# #     with tabs[i]:
+# #         tab_fields = st.multiselect(label='add fields', options = fields_to_read, default = fields_to_read[i])
+# #         st.header(fields_to_read[i])
+# #         st.bar_chart(results[1], x = 'STUSAB', y = tab_fields) 
 
 def run_query(api = 'empty', state = 'empty'):
     st.write("Api: {} State: {}".format(api, state))
