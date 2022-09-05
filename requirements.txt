@@ -4,5 +4,5 @@ numpy
 requests
 seaborn
 plotly.express
-
+bs4
 
