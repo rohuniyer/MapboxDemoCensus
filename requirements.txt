@@ -1,6 +1,4 @@
 #trying this out
-email.policy
-turtle
 pandas
 numpy
 requests
