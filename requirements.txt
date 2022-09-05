@@ -1,0 +1,10 @@
+#trying this out
+email.policy
+turtle
+pandas
+numpy
+requests
+seaborn
+plotly.express
+
+
