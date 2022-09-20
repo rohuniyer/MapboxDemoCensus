@@ -1,5 +1,4 @@
-# from email.policy import default
-# from turtle import onclick
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -24,7 +23,7 @@ st.set_page_config(
 st.title('Census API Helper App')
 
 
-st.sidebar.write("Instructions will go here. i.e. how to use app and what it can do for you")
+st.sidebar.write("Enter your API Key, choose your granularity and fields and run query. You can then navigate to the other pages to perform further functions.")
 
 #Load state table and abbreviations
 @st.cache()
@@ -227,29 +226,6 @@ if button_clicked:
     st.session_state['fields_to_read'] = fields_to_read
     st.session_state['county'] = county
     st.session_state['tract'] = tract
-
-# needed_tabs = ['State']
-# if county:
-#     needed_tabs.append('County')
-# if tract:
-#     needed_tabs.append('Tract')
-
-
-# tabs = st.tabs(needed_tabs)
-# for i in range(len(needed_tabs)):
-#     with tabs[i]:
-#         if needed_tabs[i] == 'State':
-#             chart_fields = st.multiselect(label='Choose fields', options = fields_to_read, default = fields_to_read[0])
-#             st.bar_chart(results[1], x = 'State', y = chart_fields)
-#         if needed_tabs[i] == 'County':
-#             st.bar_chart(results[1], x = 'County Name', y = fields_to_read)
-#         if needed_tabs[i] == 'Tract':
-#             st.bar_chart(results[1], x = 'tract', y = fields_to_read)                
-# # for i in range(len(fields_to_read)):
-# #     with tabs[i]:
-# #         tab_fields = st.multiselect(label='add fields', options = fields_to_read, default = fields_to_read[i])
-# #         st.header(fields_to_read[i])
-# #         st.bar_chart(results[1], x = 'STUSAB', y = tab_fields) 
 
 def run_query(api = 'empty', state = 'empty'):
     st.write("Api: {} State: {}".format(api, state))

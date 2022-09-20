@@ -1,5 +1,3 @@
-# from email.policy import default
-# from turtle import onclick
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -22,9 +20,8 @@ st.set_page_config(
 
 
 st.title('Census API Helper App')
+st.markdown("*If you're getting an KeyError here, you probably need to run the API Query page first. If you have and are still getting an error, please reach out to me.*")
 
-
-st.sidebar.write("Instructions will go here. i.e. how to use app and what it can do for you")
 
 
 def plots():
